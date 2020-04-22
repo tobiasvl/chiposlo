@@ -34,7 +34,7 @@ BADRED  EQU     $0018       ; KEY BAD-READ FLAG
 BLOC    EQU     $001C       ; DISPLAY POINTER (BYTE LOC'N)
 PATNH   EQU     $001E       ; PATTERN TEMP
 PATNL   EQU     $001F       ;
-TIME    EQU     $0020       ; RTC TIMER VALUE
+TIMER   EQU     $0020       ; RTC TIMER VALUE
 TONE    EQU     $0021       ; DURATION COUNT FOR TONE
 PPC     EQU     $0022       ; PSEUDO PRGM-COUNTER
 PSP     EQU     $0024       ; PSEUDO STACK-PTR
@@ -263,11 +263,11 @@ RANDOM: LDAA    #$C0        ; HIGH-ORDER BYTE OF RNDX =
 ;
 ; JUMP TABLE FOR MISCELLANEOUS INSTRNS [FXZZ]
 ;
-MINJMP: FCB     $07         ; VX=TIME
+MINJMP: FCB     $07         ; VX=TIMER
         FDB     VTIME
         FCB     $0A         ; VX=KEY
         FDB     VKEY
-        FCB     $15         ; TIME=VX
+        FCB     $15         ; TIMER=VX
         FDB     TIMEV
         FCB     $18         ; TONE=VX
         FDB     TONEV
@@ -296,11 +296,11 @@ MIS1:   LDAA    0,X         ; GET TABLE OPCODE
 MIS2:   LDX     1,X         ; GET ROUTINE ADRS FROM TABLE
         LDAA    VX          ; GET VX
         JMP     0,X         ; GO TO ROUTINE
-VTIME:  LDAA    TIME
+VTIME:  LDAA    TIMER
         BRA     PUTVX
 VKEY:   JSR     GETKEY
         BRA     PUTVX
-TIMEV:  STAA    TIME
+TIMEV:  STAA    TIMER
         RTS
 TONEV:  TAB                 ; SET DURATION=VX
         JMP     BTONE
@@ -693,7 +693,7 @@ CURS1:  STAA    VX          ; SET X COORD
 ;
 ; REAL TIME CLOCK INTERRUPT SERVICE ROUTINE
 ;
-RTC:    DEC     TIME
+RTC:    DEC     TIMER
         DEC     TONE
         TST     PIAB        ; CLEAR IRQ FLAG IN PIA
         RTI
