@@ -140,8 +140,14 @@ EXCALL: LDAB    PIR         ; GET INSTR REG
         CMPA    #$EE
         BEQ     RETDO
         RTS                 ; NOP, FETCH
+;
+        ORG     $C079
+;
 ERASE:  CLRA                ; WRITE ZEROS TO SCREEN
         LDX     #DISBUF     ; POINT TO DISPLAY BUFF
+;
+        ORG     $C07D
+;
 FILL:   STAA    0,X         ; FILL SCREEN WITH ACC-A
         INX
         CPX     #ENDBUF     ; DONE?
@@ -251,6 +257,8 @@ PUTVX:  LDX     VXLOC       ; REPLACE VX
 ;
 ; RANDOM BYTE GENERATOR
 ;
+        ORG     $C132
+;
 RANDOM: LDAA    #$C0        ; HIGH-ORDER BYTE OF RNDX =
         STAA    RNDX        ; =MSB OF CHIP8 START ADRS
         INC     RNDX+1
@@ -314,6 +322,8 @@ LETIV:  CLRB                ; 16-BIT ADD VX TO I
 ; COPY COMPRESSED DIGIT PATTERN (FROM TABLE)
 ; TO  5-BYTE ARRAY (DDPAT), & SET I FOR 'SHOW',
 ;
+        ORG     $C193
+;
 LETDSP: LDX     #HEXTAB-2   ; POINT TO HEX DIGIT PATTERNS ,
         ANDA    #$0F        ; ISOLATE LS DIGIT
 LDSP1:  INX                 ; SEARCH TABLE.....
@@ -358,6 +368,9 @@ HEXTAB: FDB     $F6DF       ; 0
         FDB     $934F       ; F
 ;
 LETDEQ: LDX     I           ; GET MI POINTER
+;
+        ORG     $C1E0
+;
         LDAB    #100        ; N=100
         BSR     DECI        ; CALC 100'S DIGIT
         LDAB    #10         ; N=10
@@ -399,7 +412,13 @@ MOVX1:  PULA                ; GET NEXT V
 ;
 SHOW:   LDAB    PIR+1       ; GET N (OPCODE LSB)
         CLR     VF          ; CLEAR OVERLAP FLAG
+;
+        ORG     $C224
+;
 SHOWI:  LDX     I           ; POINT TO PATTERN BYTES
+;
+        ORG     $C226
+;
 SHOWX:  LDAA    #$01        ; SET DISPLAY ADRS MSB =
         STAA    BLOC        ; = DISBUF HIGH-ORDER BYTE.
         ANDB    #$0F        ; COMPUTE NO. OF BYTES (N)
@@ -445,6 +464,8 @@ SHOWR:  RTS
 ;
 ; COMPUTE ADRS OF DISPLAY BYTE AT COORDS(B, VY):
 ;
+        ORG     $C275
+;
 DISLOC: LDAA    VY          ; FETCH Y COORD
         ANDA    #$1F        ; MASK TO 5 BITS FOR WRAP-ROUN
         ASLA                ; LEFT JUSTIFY
@@ -461,6 +482,8 @@ DISLOC: LDAA    VY          ; FETCH Y COORD
 ;
 ; KEYPAD ROUTINES
 ;
+        ORG     $C287
+;
 PAINZ:  LDAB    #$F0        ; INITIALIZE PORT
 PAINV:  LDX     #PIAA       ; (ENTRY PT FOR INV. DDR)
         CLR     1,X         ; RESET & SELECT DDR
@@ -471,6 +494,8 @@ PAINV:  LDX     #PIAA       ; (ENTRY PT FOR INV. DDR)
         RTS
 ;
 ; KEYPAD INPUT SERVICE ROUTINE
+;
+        ORG     $C297
 ;
 KEYINP: BSR     PAINZ       ; RESET KEYPAD PORT
         CLR     BADRED      ; RESET BAD-READ FLAG
@@ -502,6 +527,8 @@ KBILD1: INCA                ; (A=RESULT)
 ;
 ; GETKEY WAIT FOR KEYDOWN, THEN INPUTS
 ;
+        ORG     $C2C4
+;
 GETKEY: STX     XTEMP       ; SAVE X FOR CALLING ROUTINE
 GETK1:  BSR     PAINZ       ; RESET PORT, CLEAR FLAGS
 GETK2:  LDAA    1,X         ; INPUT STATUS (HEX KEY DOWN?)
@@ -519,9 +546,14 @@ HEXK1:  BSR     BLEEP       ; O.K. ACKNOWLEDGE
 ;
 ; TONE GENERATING ROUTINES
 ;
+        ORG     $C2DF
+;
 BLEEP:  LDAB    #4
 BTONE:  STAB    TONE        ; SET DURATION (RTC CYCLES)
         LDAB    #$41        ; TURN AUDIO ON
+;
+        ORG     $C2E5
+;
         STAB    PIAB
 BTON1:  TST     TONE        ; WAIT FOR RTC TIME-OUT
         BNE     BTON1
@@ -531,7 +563,12 @@ BTON1:  TST     TONE        ; WAIT FOR RTC TIME-OUT
 ;
 ; SOFTWARE DELAY ROUTINE FOR SERIAL I/O:
 ;
+        ORG     $C2F3
+;
 DEL333: BSR     DEL167      ; DELAY FOR 3.33 MILLISEC
+;
+        ORG     $C2F5
+;
 DEL167: PSHB
         LDAB    #200        ; DELAY FOR 1.67 MILLISEC
 DEL:    DECB
@@ -544,6 +581,8 @@ DEL:    DECB
 ; INITIALIZE TAPE, TONE, RTC, & DMA
 ; A=$3F FOR DISPLAY/DMA ON; A=$37 FOR OFF:
 ;
+        ORG     $C2FE
+;
 PBINZ:  LDX     #PIAB
         LDAB    #$3B        ; SELECT DDR (DMA ON)
         STAB    1,X
@@ -555,6 +594,8 @@ PBINZ:  LDX     #PIAB
         RTS
 ;
 ; INPUT ONE BYTE FROM TAPE PORT
+;
+        ORG     $C310
 ;
 INBYT:  BSR     XCHG        ; EXCHANGE X FOR PIA ADRS
 IN1:    LDAA    0,X
@@ -573,6 +614,8 @@ XCHG:   STX     XTEMP       ; SAVE   X-REG
         RTS
 ;
 ; OUTPUT ONE BYTE TO TAPE PORT
+;
+        ORG     $C32B
 ;
 OUTBYT: BSR     XCHG
         PSHA
@@ -612,6 +655,8 @@ LOAD1:  BSR     INBYT
 ;
 ; MONITOR ENTRY POINT
 ;
+        ORG     $C360
+;
 START:  LDS     #STOP       ; RESET SP TO TOP
         LDX     #RTC        ; SETUP IRQ VECTOR FOR RTC
         STX     IRQV
@@ -637,6 +682,9 @@ INADRS: BSR     BYT1        ; BUILD ADRS MS BYTE
         STAA    ADRS+1
         BSR     SHOADR      ; DISPLAY RESULTANT ADRS
         BRA     COMAND
+;
+        ORG     $C390
+;
 BYTIN:  BSR     GETKEE      ; INPUT 2 HEX DIGITS
 BYT1:   ASLA                ; LEFT JUSTIFY FIRST DIGIT
         ASLA
@@ -671,7 +719,13 @@ SHOADR: LDAA    #$10        ; SET CURSOR HOME POSITION
         BSR     SHODAT
         BSR     CURSR       ; MOVE CURSOR RIGHT
         RTS
+;
+        ORG     $C3C8
+;
 SHODAT: LDAA    0,X         ; FETCH DATA @ X
+;
+        ORG     $C3CA
+;
 SHOBYT  PSHA
         LSRA                ; ISOLATE MS DIGIT
         LSRA
@@ -679,12 +733,21 @@ SHOBYT  PSHA
         LSRA
         BSR     DIGOUT      ; SHOW ONE DIGIT
         PULA
+;
+        ORG     $C3D2
+;
 DIGOUT: STX     XTEMP       ; SAVE X
         JSR     LETDSP      ; POINT TO DIGIT PATTERN
         LDAB    #5          ; SHOW 5-BYTE PATTERN
         JSR     SHOWI
+;
+        ORG     $C3DC
+;
 CURSR:  LDAA    #4          ; SHIFT CURSOR RIGHT 4 DOTS
         ADDA    VX
+;
+        ORG     $C3E0
+;
 CURS1:  STAA    VX          ; SET X COORD
         LDAA    #$1A        ; SET Y COORD
         STAA    VY
@@ -699,9 +762,10 @@ RTC:    DEC     TIMER
         RTI
 IRQ:    LDX     IRQV        ; INDIRECT JUMP VIA IRQV
         JMP     0,X
-        FCB     0
 ;
 ; RESTART AND INTERRUPT TRAPS
+;
+        ORG     $C3F8
 ;
         FDB     IRQ         ; (ALLOWS USER-WRITTEN ISR)
         FDB     $0080       ; SWI ROUIINE AT $0080 (OPTION)

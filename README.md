@@ -18,3 +18,5 @@ p2bin -l 0 CHIPOS68.p
 ```
 
 The CHIPOS code in this repo is also available for download on [Michael J. Bauer's DREAM 6800 website](http://www.mjbauer.biz/DREAM6800.htm). Michael has stated to me in private correspondence that the code is in the public domain.
+
+This version contains several origins. These are not needed for assembly (besides the last one that makes sure the interrupt vectors are located at the highest addresses), but they also serve to denote sections of the code that programs will expect to stay put, should you wish to edit it while still staying CHIPOS-compatible. These addresses were all found in the document "CHIPOS SUBROUTINES (& Calling Sequences)" from Michael J. Bauer's website.
