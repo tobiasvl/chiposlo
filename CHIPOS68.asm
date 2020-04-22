@@ -6,6 +6,7 @@
 ;     DREAM-6800 OPERATING SYSTEM WITH CHIP8 LANGUAGE INTERPRETER
 ;
 ;       ORIGINATED BY MICHAEL J BAUER, DEAKIN UNIVERSITY, 1978
+;    MODIFICATIONS BY TOBIAS V LANGHOFF, UNIVERSITY OF OSLO, 2020
 ;
 ;                  www.mjbauer.biz/DREAM6800.htm
 ;
@@ -81,34 +82,35 @@ FETCH:  LDX     PPC         ; POINT TO NEXT INSTR
         STX     PIR
         STX     ZHI         ; SAVE ADRS (MMM)
         JSR     SKIP2       ; BUMP PRGM-CTR
-        LDAA    ZHI         ; MASK OFF ADRS
-        ANDA    #$0F
-        STAA    ZHI
+        LDAB    ZHI         ; MASK OFF ADRS
+        ANDB    #$0F
+        STAB    ZHI
         BSR     FINDV       ; EXTRACT VX ALSO
-        STAA    VX          ; STASH VX
+        STAB    VX          ; STASH VX
         STX     VXLOC       ; SAVE LOCATION OF VX
-        LDAA    PIR+1       ; FIND Y
-        LSRA
-        LSRA
-        LSRA
-        LSRA
+        LDAB    PIR+1       ; FIND Y
+        TBA                 ; STASH KK
+        LSRB
+        LSRB
+        LSRB
+        LSRB
         BSR     FINDV       ; EXTRACT VY
-        STAA    VY          ; STASH VY
+        STAB    VY          ; STASH VY
 EXEC:   LDX     #JUMTAB-2   ; POINT TO JUMP TABLE
-        LDAA    PIR         ; EXTRACT MSD
-        ANDA    #$F0
+        LDAB    PIR         ; EXTRACT MSD
+        ANDB    #$F0
 EXEl:   INX                 ; FIND ROUTINE ADRS
         INX
-        SUBA    #$10
+        SUBB    #$10
         BCC     EXEl        ; BRANCH IF HIGHER OR SAME
         LDX     0,X         ; LOAD ROUTINE ADRS
         JSR     0,X         ; PERFORM ROUTINE
         BRA     FETCH       ; NEXT INSTR...
 FINDV:  LDX     #VO-1       ; POINT TO VARIABLES TABLE
 FIND1:  INX                 ; FIND LOCN VX
-        DECA
+        DECB
         BPL     FIND1
-        LDAA    0,X         ; FETCH VX FROM TABLE
+        LDAB    0,X         ; FETCH VX FROM TABLE
         RTS
 ;
 ; JUMP TABLE(ROUTINE ADDRESSES)
@@ -116,10 +118,10 @@ FIND1:  INX                 ; FIND LOCN VX
 JUMTAB: FDB     EXCALL      ; ERASE, RET, CALL, NOP
         FDB     GOTO        ; GOTO MMM
         FDB     DOSUB       ; DO MMM
-        FDB     SKFEK       ; SKF VX=KK
-        FDB     SKFNK       ; SKF VX#KK
+        FDB     SKFEQ       ; SKF VX=KK
+        FDB     SKFNE       ; SKF VX#KK
         FDB     SKFEV       ; SKF VX=VY
-        FDB     LETK        ; Vx=KK
+        FDB     PUTVX       ; Vx=KK
         FDB     LETVK       ; VX=VX+KK
         FDB     LETVV       ; VX=[VX][+-&!]VY
         FDB     SKFNV       ; SKF  VX#VY
@@ -134,12 +136,12 @@ JUMTAB: FDB     EXCALL      ; ERASE, RET, CALL, NOP
 ;
 EXCALL: LDAB    PIR         ; GET INSTR REG
         BNE     CALL
-        LDAA    PIR+1
-        CMPA    #$E0
-        BEQ     ERASE
         CMPA    #$EE
         BEQ     RETDO
-        RTS                 ; NOP, FETCH
+        CMPA    #$E0
+        BNE     RETMON      ; NOP, FETCH
+        NOP                 ; PADDING FOR FALLTHROUGH
+        NOP                 ; PADDING FOR FALLTHROUGH
 ;
         ORG     $C079
 ;
@@ -152,7 +154,7 @@ FILL:   STAA    0,X         ; FILL SCREEN WITH ACC-A
         INX
         CPX     #ENDBUF     ; DONE?
         BNE     FILL
-        RTS
+RETMON: RTS
 RETDO:  TSX                 ; SAVE REAL SP
         LDS     PSP
         PULA
@@ -188,13 +190,8 @@ DOSUB:  TSX                 ; SAVE SP
 ;
 ; CONDITIONAL SKIP ROUTINES
 ;
-SKFEK:  LDAA    PIR+1       ; GET KK
 SKFEQ:  CMPA    VX
         BEQ     SKIP2
-        RTS
-SKFNK:  LDAA    PIR+1       ; GET KK
-SKFNE:  CMPA    VX
-        BNE     SKIP2
         RTS
 SKFEV:  LDAA    VY          ; GET VY
         BRA     SKFEQ
@@ -212,23 +209,23 @@ SKFKEY: JSR     KEYINP      ; INTERROGATE KEYBOARD
         CMPB    PIR+1       ; SKF VX#KEY
         BEQ     SKIP2
         RTS                 ; NO KEY GO FETCH
-SKFK1:  LDAB    #$9E
-        CMPB    PIR+1       ; WHAT INSTRN?
+SKFK1:  CMPA    #$9E
         BEQ     SKFEQ
-        BRA     SKFNE
+SKFNE:  CMPA    VX
+        BNE     SKIP2
+        RTS
 ;
 ; ARITHMETIC/LOGIC ROUTINES
 ;
-LETK:   LDAA    PIR+1       ; GET KK
-        BRA     PUTVX
-LETVK:  LDAA    PIR+1
-        ADDA    VX
+LETVK:  ADDA    VX
         BRA     PUTVX
 RANDV:  BSR     RANDOM      ; GET RANDOM BYTE
         ANDA    PIR+1
         BRA     PUTVX
-LETVV:  LDAA    VX
-        LDAB    PIR+1
+
+LETVV:  TAB
+        LDAA    VX
+
         ANDB    #$0F        ; EXTRACT N
         BNE     LETV1
         LDAA    VY          ; VX=VY
@@ -409,9 +406,9 @@ MOVX1:  PULA                ; GET NEXT V
         RTS
 ;
 ; DISPLAY ROUTINES
-;
-SHOW:   LDAB    PIR+1       ; GET N (OPCODE LSB)
+SHOW:   TAB                 ; GET N (OPCODE LSB)
         CLR     VF          ; CLEAR OVERLAP FLAG
+        NOP                 ; PADDING FOR FALLTHROUGH
 ;
         ORG     $C224
 ;
