@@ -1,7 +1,8 @@
 ;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-;                           C H I P O S
+;                         C H I P O S L O
 ;
 ;  COMPACT HEXADECIMAL INTERPRETIVE PROGRAMMING AND OPERATING SYSTEM
+;                       WITH LOGICAL OPERATORS
 ;
 ;     DREAM-6800 OPERATING SYSTEM WITH CHIP8 LANGUAGE INTERPRETER
 ;
@@ -23,7 +24,6 @@ IRQV    EQU     $0000       ; INTERRUPT VECTOR
 BEGA    EQU     $0002       ; BEGIN ADRS FOR LOAD/DUMP
 ENDA    EQU     $0004       ; ENDING ADRS FOR LOAD/DUMP
 ADRS    EQU     $0006       ; ADRS FOR GO AND MEMOD
-DDPAT   EQU     $0008       ; DIGIT PATTERN TEMP (5 BYTES)
 RND     EQU     $000D       ; RANDOM BYTE (SEED)
 N       EQU     $000E       ; TEMP
 ATEMP   EQU     $000F       ; TEMP
@@ -42,7 +42,6 @@ PSP     EQU     $0024       ; PSEUDO STACK-PTR
 I       EQU     $0026       ; CHIP8 MEMORY POINTER
 PIR     EQU     $0028       ; PSEUDO INST-REG
 VXLOC   EQU     $002A       ; POINTS TO VX
-RNDX    EQU     $002C       ; RANDOM POINTER
 VX      EQU     $002E       ; VARIABLE X (ALSO X-COORD)
 VY      EQU     $002F       ; VARIABLE Y (ALSO Y-COORD)
 ;
@@ -50,6 +49,12 @@ VY      EQU     $002F       ; VARIABLE Y (ALSO Y-COORD)
 ;
 VO      EQU     $0030
 VF      EQU     $003F
+;
+; CHIPOSLO MODIFICATIONS
+VXTMP   EQU     $000A       ; VARIABLE X (ALSO X-COORD)
+ALUSUB  EQU     $0040       ; 8XYN SUBROUTINE TEMP (5 BYTES)
+RNDX    EQU     $0047       ; RANDOM POINTER
+DDPAT   EQU     $0050       ; DIGIT PATTERN TEMP (5 BYTES)
 ;
 ; CHIP8 SUBROUTINE STACK
 ;
@@ -87,6 +92,7 @@ FETCH:  LDX     PPC         ; POINT TO NEXT INSTR
         STAB    ZHI
         BSR     FINDV       ; EXTRACT VX ALSO
         STAB    VX          ; STASH VX
+        STAB    VXTMP       ; STASH VX FOR ALU
         STX     VXLOC       ; SAVE LOCATION OF VX
         LDAB    PIR+1       ; FIND Y
         TBA                 ; STASH KK
@@ -140,8 +146,6 @@ EXCALL: LDAB    PIR         ; GET INSTR REG
         BEQ     RETDO
         CMPA    #$E0
         BNE     RETMON      ; NOP, FETCH
-        NOP                 ; PADDING FOR FALLTHROUGH
-        NOP                 ; PADDING FOR FALLTHROUGH
 ;
         ORG     $C079
 ;
@@ -214,43 +218,62 @@ SKFK1:  CMPA    #$9E
 SKFNE:  CMPA    VX
         BNE     SKIP2
         RTS
-;
-; ARITHMETIC/LOGIC ROUTINES
-;
 LETVK:  ADDA    VX
         BRA     PUTVX
 RANDV:  BSR     RANDOM      ; GET RANDOM BYTE
         ANDA    PIR+1
         BRA     PUTVX
-
+;
+; ARITHMETIC/LOGIC ROUTINES
+; CONSTRUCTS A TEMPORARY SUBROUTINE IN RAM
+;
 LETVV:  TAB
-        LDAA    VX
-
+        LDAA    VY
         ANDB    #$0F        ; EXTRACT N
-        BNE     LETV1
-        LDAA    VY          ; VX=VY
-LETV1:  DECB
-        BNE     LETV2
-        ORAA    VY          ; VX=VX!VY (OR)
-LETV2:  DECB
-        BNE     LETV4
-        ANDA    VY          ; VX=VX.VY
-LETV4:  DECB
+        BEQ     PUTVX       ; 8XY0: VX=VY
+        LDX     #$0A39      ; (OP) VX / CLV, RTS
+        CMPB    #$05        ; 8XY5: VX=VX-VY, INVERTED CARRY
+        BNE     LETV7
+        LDAA    VX
+        LDX     #$2F7E      ; (OP) VY, JMP (INVC)
+LETV7:  CMPB    #$07        ; 8XY7: VX=VY-VX, INVERTED CARRY
+        BNE     LETVN
+        LDX     #$0A7E      ; (OP) VX, JMP (INVC)
+LETVN:  STX     ALUSUB+1    ; STASH CONSTRUCTED ROUTINE
+        LDX     #INVC
+        STX     ALUSUB+3    ; STASH ADDRESS TO INVC
+FINDOP: INX
         DECB
-        BNE     LETV5
-        CLR     VF          ; VF=0
-        ADDA    VY          ; VX=VX+VY
-        BCC     LETV5       ; RESULT < 256
-        INC     VF          ; VF=1(OVERFLOW)
-LETV5:  DECB
-        BNE     PUTVX
-        CLR     VF          ; VF=0
-        SUBA    VY          ; VX=VX-VY
-        BCS     PUTVX       ; VX<VY? (UNSIGNED)
-        INC     VF          ; NO PUT VF=l
+        BNE     FINDOP
+        LDAB    3,X         ; FIND OPCODE IN TABLE
+        STAB    ALUSUB      ; STASH OPCODE
+        CLR     VF          ; CLEAR VF
+        JSR     ALUSUB
+        ROL     VF          ; VF=CARRY
 PUTVX:  LDX     VXLOC       ; REPLACE VX
         STAA    0,X
         RTS
+;
+; INVERT CARRY FLAG
+;
+INVC:   ROLB
+        INCB
+        RORB
+        RTS
+;
+; TABLE WITH ALU OPCODES FOR 8XYN INSTRS
+;
+JUMP8:  ORG     $C12B
+;
+;     ( FCB     $96         ; LDAA VY 8XY0, HANDLED ABOVE )
+        FCB     $9A         ; ORAA VY 8XY1
+        FCB     $94         ; ANDA VY 8XY2
+        FCB     $98         ; EORA VY 8XY3
+        FCB     $9B         ; ADDA VY 8XY4
+        FCB     $90         ; SUBA VY 8XY5
+        FCB     $44         ; ASLA    8XY6
+        FCB     $90         ; SUBA VX 8XY7
+;     ( FCB     $48         ; LSRA    8XYE, BYTE FOUND BELOW )
 ;
 ; RANDOM BYTE GENERATOR
 ;
