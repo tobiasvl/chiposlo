@@ -1,13 +1,13 @@
 Compact Hexadecimal Interpretive Programming and Operating System with Logical Operators (CHIPOSLO)
 ========
 
-This is a version of the monitor program and operating system CHIPOS for [Michael J. Bauer's 1979 DREAM 6800 computer](http://www.mjbauer.biz/DREAM6800.htm), with added support for four CHIP-8 instructions that appeared in other CHIP-8 interpreters.
+This is a version of the monitor program and operating system <acronym title="Compact Hexadecimal Interpretive Programming and Operating System">CHIPOS</acronym> for [Michael J. Bauer's 1979 <acronym title="Domestic Recreational Educational and Adaptive. Microcomputer">DREAM</acronym> 6800 computer](http://www.mjbauer.biz/DREAM6800.htm), with added support for four CHIP-8 instructions that appeared in other CHIP-8 interpreters.
 
 It is designed to run from a 1K EPROM (like the 2708) mapped to memory addresses `C000`–`C3FF`.
 
-Replacing CHIPOS with CHIPOSLO will allow you to run more of the original COSMAC VIP programs on your DREAM, or even more [modern CHIP-8 programs](https://johnearnest.github.io/chip8Archive/?sort=platform) written in the decades since.
+Replacing CHIPOS with CHIPOSLO will allow you to run more of the original CHIP-8 programs for the COSMAC VIP computer on your DREAM, or even more [modern CHIP-8 programs](https://johnearnest.github.io/chip8Archive/?sort=platform) written in the decades since.
 
-If you don't own a DREAM 6800 computer, see my emulator project [DRÖM](https://tobiasvl.github.com/drom) (work in progress) or [MAME](https://mamedev.org)..
+If you don't own a DREAM 6800 computer, see my emulator project [DRÖM](https://tobiasvl.github.com/drom) (work in progress) or [MAME](https://mamedev.org).
 
 Features
 --------
@@ -15,7 +15,7 @@ Features
 * 1024 bytes, fits on a 2708 EPROM (like CHIPOS)
 * Adds four new logical/arithmetic instructions to your DREAM 6800's CHIP-8 interpreter
 * Lets you run more programs and games from the vast, historical CHIP-8 software library
-* Almost completely compatible[*](#Compatibility_notes) with CHIPOS!
+* Almost completely compatible[*](#compatibility-notes) with CHIPOS!
 
 Background
 ----------
@@ -45,7 +45,7 @@ as -cpu 6800 CHIPOSLO.asm
 p2bin -l 0 CHIPOSLO.p
 ```
 
-The code is a modified version of the CHIPOS code available for download on [Michael J. Bauer's DREAM 6800 website](http://www.mjbauer.biz/DREAM6800.htm). Michael has said to me in private correspondence that the code is in the public domain.
+The code is a modified version of the CHIPOS code available for download on [Michael J. Bauer's DREAM 6800 website](http://www.mjbauer.biz/DREAM6800.htm). Michael J. Bauer has graciously related to me in private correspondence that the code is in the public domain.
 
 The commit history in this repository details the changes I've made (the initial commit contains the original CHIPOS code).
 
