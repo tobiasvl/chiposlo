@@ -29,7 +29,7 @@ Weisbecker's original CHIP-8 interpreter for the VIP supported four undocumented
 * `8XY7`: `VX = VY - VX`
 * `8XYE`: `VX = VY << 1`
 
-(You can read more about why these instructions worked in [Laurence Scotford's disassembly of the VIP's CHIP-8 interpreter](http://laurencescotford.co.uk/?p=266).)
+(You can read more about why these instructions worked in [Laurence Scotford's disassembly of the VIP's CHIP-8 interpreter](https://laurencescotford.com/chip-8-on-the-cosmac-vip-arithmetic-and-logic-instructions/).)
 
 These instructions were discovered around 1978 and detailed in the COSMAC VIP's newsletter, [VIPER issue #2](https://archive.org/details/viper_1_02/page/n2/mode/1up). Bauer was not aware of them, and the interpreter that came with its CHIPOS did not include them.
 
