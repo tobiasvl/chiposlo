@@ -7,7 +7,7 @@ It is designed to run from a 1K EPROM (like the 2708) mapped to memory addresses
 
 Replacing CHIPOS with CHIPOSLO will allow you to run more of the original CHIP-8 programs for the COSMAC VIP computer on your DREAM, or even more [modern CHIP-8 programs](https://johnearnest.github.io/chip8Archive/?sort=platform) written in the decades since.
 
-If you don't own a DREAM 6800 computer, see my emulator project [DRÖM](https://tobiasvl.github.com/drom) (work in progress) or [MAME](https://mamedev.org).
+If you don't own a DREAM 6800 computer, see my emulator project [DRÖM](https://github.com/tobiasvl/drom) or [MAME](https://mamedev.org).
 
 Features
 --------
