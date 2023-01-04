@@ -1,7 +1,7 @@
 Compact Hexadecimal Interpretive Programming and Operating System with Logical Operators (CHIPOSLO)
 ========
 
-This is a version of the monitor program and operating system <acronym title="Compact Hexadecimal Interpretive Programming and Operating System">CHIPOS</acronym> for [Michael J. Bauer's 1979 <acronym title="Domestic Recreational Educational and Adaptive. Microcomputer">DREAM</acronym> 6800 computer](http://www.mjbauer.biz/DREAM6800.htm), with added support for four CHIP-8 instructions that appeared in other CHIP-8 interpreters.
+This is a version of the monitor program and operating system <acronym title="Compact Hexadecimal Interpretive Programming and Operating System">CHIPOS</acronym> for [Michael J. Bauer's 1979 <acronym title="Domestic Recreational Educational and Adaptive Microcomputer">DREAM</acronym> 6800 computer](http://www.mjbauer.biz/DREAM6800.htm), with added support for four CHIP-8 instructions that appeared in other CHIP-8 interpreters.
 
 It is designed to run from a 1K EPROM (like the 2708) mapped to memory addresses `C000`–`C3FF`.
 
@@ -47,14 +47,17 @@ p2bin -l 0 CHIPOSLO.p
 
 The code is a modified version of the CHIPOS code available for download on [Michael J. Bauer's DREAM 6800 website](http://www.mjbauer.biz/DREAM6800.htm). Michael J. Bauer has graciously related to me in private correspondence that the code is in the public domain.
 
-The commit history in this repository details the changes I've made (the initial commit contains the original CHIPOS code).
+The commit history in this repository details the changes I've made (the initial commit contains [the original CHIPOS code](CHIPOS_asm68_listing.pdf)).
+
+
+[foo](chipos_manual.pdf)
 
 Compatibility notes
 -------------------
 
-All of the subroutines in the "CHIPOS SUBROUTINES (& Calling Sequences)" manual are still located at the same addresses, so any programs that call them should hopefully still work.
+All the software details in the [CHIPOS software manual](chipos_manual.pdf) still apply, and the subroutines in the ["CHIPOS SUBROUTINES (& Calling Sequences)" manual](http://www.mjbauer.biz/CHIPOS_calls.pdf) are still located at the same addresses, so any programs that call them should hopefully still work.
 
-However, some of the scratchpad parameter addresses listed at the bottom have moved to compress some code. These are:
+However, some of the scratchpad parameter addresses listed at the bottom of the latter manual have moved to compress some code. These are:
 
 * `0040`–`0045` are reserved as scratch (used to construct a temporary logic subroutine)
 * `DDPAT` has moved from `0008` to `0050` (in order to let `0A` pull double duty as temporary VX storage and the opcode for `CLV` as a no-op)
