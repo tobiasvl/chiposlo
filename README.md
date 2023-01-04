@@ -31,7 +31,7 @@ Weisbecker's original CHIP-8 interpreter for the VIP supported four undocumented
 
 (You can read more about why these instructions worked in [Laurence Scotford's disassembly of the VIP's CHIP-8 interpreter](https://laurencescotford.com/chip-8-on-the-cosmac-vip-arithmetic-and-logic-instructions/).)
 
-These instructions were discovered around 1978 and detailed in the COSMAC VIP's newsletter, [VIPER issue #2](https://archive.org/details/viper_1_02/page/n2/mode/1up). Bauer was not aware of them, and the interpreter that came with its CHIPOS did not include them.
+These instructions were discovered around 1978 and detailed in the COSMAC VIP's newsletter, [VIPER issue #2](https://archive.org/details/viper_1_02/page/n2/mode/1up). Bauer was not aware of them, and the interpreter that came with his CHIPOS did not include them.
 
 Most CHIP-8 interpreters since, including CHIP-48 and SUPER-CHIP from 1990/1991, support these extra instructions (although they often introduced other incompatibilities with the original VIP implementation). Now they're finally available on the DREAM as well!
 
