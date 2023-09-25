@@ -52,9 +52,8 @@ VF      EQU     $003F
 ;
 ; CHIPOSLO MODIFICATIONS
 VXTMP   EQU     $000A       ; VARIABLE X (ALSO X-COORD)
-ALUSUB  EQU     $0040       ; 8XYN SUBROUTINE TEMP (5 BYTES)
+DDPAT   EQU     $0040       ; DIGIT PATTERN TEMP (5 BYTES)
 RNDX    EQU     $0047       ; RANDOM POINTER
-DDPAT   EQU     $0050       ; DIGIT PATTERN TEMP (5 BYTES)
 ;
 ; CHIP8 SUBROUTINE STACK
 ;
@@ -92,10 +91,10 @@ FETCH:  LDX     PPC         ; POINT TO NEXT INSTR
         STAB    ZHI
         BSR     FINDV       ; EXTRACT VX ALSO
         STAB    VX          ; STASH VX
-        STAB    VXTMP       ; STASH VX FOR ALU
+        STAB    VXTMP
         STX     VXLOC       ; SAVE LOCATION OF VX
         LDAB    PIR+1       ; FIND Y
-        TBA                 ; STASH KK
+        TBA
         LSRB
         LSRB
         LSRB
@@ -132,11 +131,11 @@ JUMTAB: FDB     EXCALL      ; ERASE, RET, CALL, NOP
         FDB     LETVV       ; VX=[VX][+-&!]VY
         FDB     SKFNV       ; SKF  VX#VY
         FDB     LETI        ; I=MMM
-        FDB     GOTOV       ; GOTO MMM+VO
+        FDB   GOTOV       ; GOTO MMM+VO
         FDB     RANDV       ; VX-RND.KK
-        FDB     SHOW        ; SHOW  N@VX, VY
-        FDB     SKFKEY      ; SKF VX[=#]KEY
-        FDB     MISC        ; (MINOR JUMP TABL)
+        FDB   SHOW        ; SHOW  N@VX, VY
+        FDB   SKFKEY      ; SKF VX[=#]KEY
+        FDB   MISC        ; (MINOR JUMP TABL)
 ;
 ; ERASE, RETURN, CALL (MLS), OR NOP INTRN:
 ;
@@ -145,18 +144,18 @@ EXCALL: LDAB    PIR         ; GET INSTR REG
         CMPA    #$EE
         BEQ     RETDO
         CMPA    #$E0
-        BNE     RETMON      ; NOP, FETCH
+        BNE     RETMON
 ;
         ORG     $C079
 ;
 ERASE:  CLRA                ; WRITE ZEROS TO SCREEN
-        LDX     #ENDBUF-#DISBUF     ; POINT TO DISPLAY BUFF
+        LDX     #DISBUF     ; POINT TO DISPLAY BUFF
 ;
         ORG     $C07D
 ;
-FILL:   STAA    ENDBUF,X ;0,X         ; FILL SCREEN WITH ACC-A
+FILL:   STAA    0,X         ; FILL SCREEN WITH ACC-A
         INX
-        ;CPX     #ENDBUF     ; DONE?
+        CPX     #ENDBUF     ; DONE?
         BNE     FILL
 RETMON: RTS
 RETDO:  TSX                 ; SAVE REAL SP
@@ -209,8 +208,8 @@ SKIP2:  LDX     PPC         ; ADD 2 TO PPC
 SKFKEY: JSR     KEYINP      ; INTERROGATE KEYBOARD
         TST     BADRED      ; KEY DOWN?
         BEQ     SKFK1
-        LDAB    #$A1        ; WHAT INSTRN?
-        CMPB    PIR+1       ; SKF VX#KEY
+        LDAA    PIR+1
+        CMPA    #$A1
         BEQ     SKIP2
         RTS                 ; NO KEY GO FETCH
 SKFK1:  CMPA    #$9E
@@ -218,62 +217,70 @@ SKFK1:  CMPA    #$9E
 SKFNE:  CMPA    VX
         BNE     SKIP2
         RTS
+;
+; ARITHMETIC/LOGIC ROUTINES
+;
 LETVK:  ADDA    VX
         BRA     PUTVX
 RANDV:  BSR     RANDOM      ; GET RANDOM BYTE
         ANDA    PIR+1
         BRA     PUTVX
-;
-; ARITHMETIC/LOGIC ROUTINES
-; CONSTRUCTS A TEMPORARY SUBROUTINE IN RAM
-;
+
 LETVV:  TAB
         LDAA    VY
+
         ANDB    #$0F        ; EXTRACT N
-        BEQ     PUTVX       ; 8XY0: VX=VY
-        LDX     #$0A39      ; (OP) VX / CLV, RTS
-        CMPB    #$05        ; 8XY5: VX=VX-VY, INVERTED CARRY
-        BNE     LETV7
+
+        BEQ     PUTVX
+
+        LDX     #$0A39      ; VX/CLV RTS
+        CMPB    #$05
+        BNE     nnn
         LDAA    VX
-        LDX     #$2F7E      ; (OP) VY, JMP (INVC)
-LETV7:  CMPB    #$07        ; 8XY7: VX=VY-VX, INVERTED CARRY
-        BNE     LETVN
-        LDX     #$0A7E      ; (OP) VX, JMP (INVC)
-LETVN:  STX     ALUSUB+1    ; STASH CONSTRUCTED ROUTINE
-        LDX     #INVC
-        STX     ALUSUB+3    ; STASH ADDRESS TO INVC
-FINDOP: INX
+        LDX     #$2F7E
+
+nnn:    CMPB    #$07
+        BNE     done
+        LDX     #$0A7E
+
+done:
+        STX     $0041
+        LDX     #INVF
+        STX     $0043
+loop:   INX
         DECB
-        BNE     FINDOP
-        LDAB    3,X         ; FIND OPCODE IN TABLE
-        STAB    ALUSUB      ; STASH OPCODE
-        CLR     VF          ; CLEAR VF
-        JSR     ALUSUB
-        ROL     VF          ; VF=CARRY
+        BNE     loop
+
+        LDAB    3,X
+        STAB    $0040
+
+        ROR     VF
+
+        FCB     $BD
+        FDB     $0040
+
+        ROL     VF
+
 PUTVX:  LDX     VXLOC       ; REPLACE VX
         STAA    0,X
         RTS
-;
-; INVERT CARRY FLAG
-;
-INVC:   ROLB
+
+INVF:   ROLB
         INCB
         RORB
         RTS
-;
-; TABLE WITH ALU OPCODES FOR 8XYN INSTRS
-;
-JUMP8:  ORG     $C12B
-;
-;     ( FCB     $96         ; LDAA VY 8XY0, HANDLED ABOVE )
-        FCB     $9A         ; ORAA VY 8XY1
-        FCB     $94         ; ANDA VY 8XY2
-        FCB     $98         ; EORA VY 8XY3
-        FCB     $9B         ; ADDA VY 8XY4
-        FCB     $90         ; SUBA VY 8XY5
-        FCB     $44         ; ASLA    8XY6
-        FCB     $90         ; SUBA VX 8XY7
-;     ( FCB     $48         ; LSRA    8XYE, BYTE FOUND BELOW )
+
+        ORG $C12B
+JUMP8:  ;FCB $96 ;LDAA VY 0
+        FCB $9A ;ORAA VY 1
+        FCB $94 ;ANDA VY 2
+        FCB $98 ;EORA VY 3
+        FCB $9B ;ADDA VY 4
+        FCB $90 ;SUBA VY 5
+        FCB $44 ;ASLA    6
+        FCB $90 ;SUBA VX 7
+        ;FCB $48 ;LSRA    E
+
 ;
 ; RANDOM BYTE GENERATOR
 ;
@@ -431,7 +438,6 @@ MOVX1:  PULA                ; GET NEXT V
 ; DISPLAY ROUTINES
 SHOW:   TAB                 ; GET N (OPCODE LSB)
         CLR     VF          ; CLEAR OVERLAP FLAG
-        NOP                 ; PADDING FOR FALLTHROUGH
 ;
         ORG     $C224
 ;
@@ -451,8 +457,8 @@ SHOW2:  PSHB                ; DO N TIMES,...,.
         CLR     PATNL
         LDAB    VX          ; DETERMINE OFFSET BIT COUNT
         ANDB    #7
-        BEQ     SHOW4       ; SHIFT INTO MATCHING POS'N
-SHOW3:  LSR     PATNH
+SHOW3:  BEQ     SHOW4       ; SHIFT INTO MATCHING POS'N
+        LSR     PATNH
         ROR     PATNL
         DECB
         BNE     SHOW3
