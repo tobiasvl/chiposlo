@@ -207,13 +207,13 @@ SKIP2:  LDX     PPC         ; ADD 2 TO PPC
         STX     PPC
         RTS
 SKFKEY: JSR     KEYINP      ; INTERROGATE KEYBOARD
+        LDAB    PIR+1       ; WHAT INSTRN? PRESERVE KEY IN A
         TST     BADRED      ; KEY DOWN?
         BEQ     SKFK1
-        LDAB    #$A1        ; WHAT INSTRN?
-        CMPB    PIR+1       ; SKF VX#KEY
+        CMPB    #$A1        ; SKF VX#KEY
         BEQ     SKIP2
         RTS                 ; NO KEY GO FETCH
-SKFK1:  CMPA    #$9E
+SKFK1:  CMPB    #$9E
         BEQ     SKFEQ
 SKFNE:  CMPA    VX
         BNE     SKIP2
